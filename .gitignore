@@ -8,8 +8,8 @@ app/build/
 *.iml
 .local.properties
 
-# APK binaries
-*.apk
+# APK binaries are included for direct installation
+# AvityTV.apk is the release APK
 
 # OS
 .DS_Store
