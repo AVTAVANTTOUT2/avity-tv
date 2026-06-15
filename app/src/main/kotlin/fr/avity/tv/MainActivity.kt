@@ -14,7 +14,30 @@ import android.webkit.WebViewClient
 
 private const val HOME_URL = "https://tv.avity.fr"
 private const val USER_AGENT = "AvityTV/1.0"
-private const val SCALE_PERCENT = 60
+
+// Largeur de mise en page forcee (px CSS). Le site Cinepulse bascule sur son
+// layout desktop (breakpoints Tailwind lg/xl) a partir de ~1280px. Le WebView,
+// avec useWideViewPort + loadWithOverviewMode, met automatiquement cette largeur
+// a l'echelle pour remplir l'ecran de la TV — rendu net et lisible a 3 metres.
+// Plus cette valeur est grande, plus le contenu apparait petit (plus de px CSS
+// etales sur l'ecran). 1920 = layout desktop Full HD natif : sur une TV 1080p le
+// rendu est 1:1 (aucune mise a l'echelle), contenu compact et net.
+private const val LAYOUT_WIDTH = 1920
+
+// Force la balise viewport du site pour declencher le layout desktop, quelle
+// que soit la densite reelle de la TV. Reapplique a chaque chargement de page.
+private const val FORCE_DESKTOP_VIEWPORT_JS = """
+    (function() {
+        var width = $LAYOUT_WIDTH;
+        var meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.setAttribute('name', 'viewport');
+            (document.head || document.documentElement).appendChild(meta);
+        }
+        meta.setAttribute('content', 'width=' + width + ', initial-scale=1.0');
+    })();
+"""
 
 class MainActivity : Activity() {
 
@@ -121,7 +144,10 @@ class MainActivity : Activity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
-        setInitialScale(SCALE_PERCENT)
+        // setInitialScale(0) = mise a l'echelle automatique. Couplee a
+        // useWideViewPort et a la balise viewport forcee (LAYOUT_WIDTH), le WebView
+        // calcule l'echelle pour que le layout desktop remplisse la TV.
+        setInitialScale(0)
 
         isFocusableInTouchMode = true
         isFocusable = true
@@ -137,15 +163,16 @@ class MainActivity : Activity() {
             return false
         }
 
+        override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+            super.onPageStarted(view, url, favicon)
+            // Best-effort : applique la largeur desktop des que le <head> existe.
+            view.evaluateJavascript(FORCE_DESKTOP_VIEWPORT_JS, null)
+        }
+
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
-            view.setInitialScale(SCALE_PERCENT)
-            view.evaluateJavascript(
-                "document.querySelector('meta[name=viewport]')?.setAttribute('content'," +
-                    "'width=device-width, initial-scale=0.6');" +
-                    "document.body.style.zoom='0.6';",
-                null
-            )
+            // Garantie : reapplique apres le rendu complet de la SPA React.
+            view.evaluateJavascript(FORCE_DESKTOP_VIEWPORT_JS, null)
         }
 
         override fun onReceivedError(

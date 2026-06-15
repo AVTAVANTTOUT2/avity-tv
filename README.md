@@ -36,7 +36,7 @@ adb install AvityTV.apk
 | Mode plein écran | Immersif (pas de barres système) |
 | Orientation | Paysage forcé |
 | Télécommande D-pad | Flèche gauche / Back → retour page, Menu → recharger |
-| Échelle | 60% (zoom réduit pour meilleure lisibilité sur TV) |
+| Mise à l'échelle | Largeur de layout forcée à **1920px** (Full HD desktop natif) — rendu 1:1 sur TV 1080p, contenu compact et net |
 | Page d'erreur | Affichée si le site est inaccessible |
 
 ## Structure du projet
