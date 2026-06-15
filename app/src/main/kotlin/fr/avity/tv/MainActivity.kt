@@ -14,6 +14,7 @@ import android.webkit.WebViewClient
 
 private const val HOME_URL = "https://tv.avity.fr"
 private const val USER_AGENT = "AvityTV/1.0"
+private const val SCALE_PERCENT = 60
 
 class MainActivity : Activity() {
 
@@ -120,6 +121,8 @@ class MainActivity : Activity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
+        setInitialScale(SCALE_PERCENT)
+
         isFocusableInTouchMode = true
         isFocusable = true
         requestFocus()
@@ -132,6 +135,17 @@ class MainActivity : Activity() {
             request: WebResourceRequest
         ): Boolean {
             return false
+        }
+
+        override fun onPageFinished(view: WebView, url: String) {
+            super.onPageFinished(view, url)
+            view.setInitialScale(SCALE_PERCENT)
+            view.evaluateJavascript(
+                "document.querySelector('meta[name=viewport]')?.setAttribute('content'," +
+                    "'width=device-width, initial-scale=0.6');" +
+                    "document.body.style.zoom='0.6';",
+                null
+            )
         }
 
         override fun onReceivedError(
